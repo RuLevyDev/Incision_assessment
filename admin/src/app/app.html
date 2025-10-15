@@ -1,0 +1,166 @@
+<main class="admin-layout">
+  <header class="admin-header">
+    <div>
+      <h1>Catalog Admin</h1>
+      <p>Review, filter, and approve catalog items from the creator app.</p>
+    </div>
+    <button type="button" class="refresh-button" (click)="refresh()" [disabled]="store.loading()">
+      @if (store.loading()) {
+        <span class="spinner" aria-hidden="true"></span>
+      }
+      Refresh
+    </button>
+  </header>
+
+  @if (store.error(); as error) {
+    <section class="alert" role="alert">
+      {{ error }}
+    </section>
+  }
+
+  <section class="toolbar">
+    <label class="field">
+      <span>Search</span>
+      <input
+        type="search"
+        [value]="store.search()"
+        (input)="onSearchChange($event)"
+        placeholder="Search by title, description, or tags"
+        aria-label="Search catalog items"
+      />
+    </label>
+    <label class="field">
+      <span>Category</span>
+      <select
+        [value]="store.category()"
+        (change)="onCategoryChange($event)"
+        aria-label="Filter by category"
+      >
+        <option value="all">All categories</option>
+        @for (category of store.categories(); track category) {
+          <option [value]="category">{{ category }}</option>
+        }
+      </select>
+    </label>
+    <span class="summary">
+      Showing {{ store.filteredItems().length }} of {{ store.items().length }} items
+    </span>
+  </section>
+
+  <section class="content">
+    <div class="item-list">
+      @if (store.loading() && store.items().length === 0) {
+        <div class="empty">
+          <span class="spinner" aria-hidden="true"></span>
+          <p>Loading catalog items…</p>
+        </div>
+      } @else if (store.filteredItems().length === 0) {
+        <div class="empty">
+          <p>No items match the current filters.</p>
+        </div>
+      } @else {
+        <ul>
+          @for (item of store.filteredItems(); track item.id) {
+            <li
+              (click)="selectItem(item)"
+              [class.selected]="store.selectedId() === item.id"
+              tabindex="0"
+            >
+              <div class="item-header">
+                <h3>{{ item.title }}</h3>
+                <span [class]="qualityBadgeClass(item.qualityBand)">
+                  {{ item.score }} • {{ item.qualityBand | titlecase }}
+                </span>
+              </div>
+              <p class="item-description">
+                {{ item.description }}
+              </p>
+              <div class="item-meta">
+                <span class="category">{{ item.category || 'Uncategorised' }}</span>
+                @if (item.isApproved) {
+                  <span class="status status--approved">
+                    <span aria-hidden="true">✔</span>
+                    Approved
+                  </span>
+                } @else {
+                  <span class="status status--pending">Pending</span>
+                }
+              </div>
+            </li>
+          }
+        </ul>
+      }
+    </div>
+
+    <div class="item-details">
+      @if (store.selectedItem(); as item) {
+        <div class="details-header">
+          <div>
+            <h2>{{ item.title }}</h2>
+            <p class="details-subtitle">
+              Created {{ item.createdAt | date: 'medium' }} • Updated
+              {{ item.updatedAt | date: 'medium' }}
+            </p>
+          </div>
+          <span [class]="qualityBadgeClass(item.qualityBand)">
+            {{ item.score }} • {{ item.qualityBand | titlecase }}
+          </span>
+        </div>
+
+        <p class="details-description">
+          {{ item.description }}
+        </p>
+
+        <div class="details-grid">
+          <div>
+            <span class="label">Category</span>
+            <p>{{ item.category || 'Uncategorised' }}</p>
+          </div>
+          <div>
+            <span class="label">Status</span>
+            @if (item.isApproved) {
+              <p class="status status--approved">Approved</p>
+            } @else {
+              <p class="status status--pending">Pending approval</p>
+            }
+          </div>
+          <div>
+            <span class="label">Tags</span>
+            @if (item.tags.length > 0) {
+              <p class="tags">
+                @for (tag of item.tags; track tag) {
+                  <span class="tag">{{ tag }}</span>
+                }
+              </p>
+            } @else {
+              <p>None</p>
+            }
+          </div>
+        </div>
+
+        <footer class="details-footer">
+          <div class="hint">Items must score 90+ to be eligible for approval.</div>
+          <button
+            type="button"
+            class="approve-button"
+            (click)="approve(item)"
+            [disabled]="approvalDisabled(item)"
+          >
+            @if (store.approvingId() === item.id) {
+              <span class="spinner" aria-hidden="true"></span>
+            }
+            @if (item.isApproved) {
+              Marked as approved
+            } @else {
+              Approve item
+            }
+          </button>
+        </footer>
+      } @else {
+        <div class="empty">
+          <p>Select an item to view details.</p>
+        </div>
+      }
+    </div>
+  </section>
+</main>
