@@ -1,4 +1,4 @@
-# Thrive Catalog Assignment
+# Catalog Assignment
 
 This monorepo contains the catalog take-home for the **Creator (Flutter)** and **Admin (Angular)** apps. Both apps share in-memory data exposed through the local HTTP API served by the Flutter app.
 
